@@ -1,5 +1,5 @@
 const URL_BASE: string =
-  (import.meta as any).env?.VITE_API_URL || 'https://medsync-backend-oqms.onrender.com/api';
+  (import.meta as any).env?.VITE_API_URL || 'https://completo-1-mejz.onrender.com';
 
 export const CHAVE_TOKEN = 'medsync_token';
 
