@@ -10,8 +10,19 @@ function chaveParaUint8(base64: string): Uint8Array<ArrayBuffer> {
   return saida;
 }
 
+function mesmaChave(sub: PushSubscription, chave: string): boolean {
+  const atual = sub.options?.applicationServerKey;
+  if (!atual) return true;
+  const a = new Uint8Array(atual as ArrayBuffer);
+  const b = chaveParaUint8(chave);
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
 export const suportaPush = () =>
-  typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  typeof window !== 'undefined' &&
+  'serviceWorker' in navigator &&
+  typeof (window as any).PushManager !== 'undefined' &&
+  typeof (window as any).Notification !== 'undefined';
 
 const ehIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
 const instalado = () =>
@@ -70,7 +81,11 @@ export function useNotificacoes() {
       const { habilitado, chave } = await api.notificacoes.chavePublica();
       if (!habilitado || !chave) return 'O servidor ainda não tem as chaves de notificação (VAPID) configuradas.';
 
-      const existente = await reg.pushManager.getSubscription();
+      let existente = await reg.pushManager.getSubscription();
+      if (existente && !mesmaChave(existente, chave)) {
+        await existente.unsubscribe(); // o servidor trocou de chave: inscreve de novo
+        existente = null;
+      }
       const sub = existente || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chaveParaUint8(chave) }));
       await api.notificacoes.inscrever(sub.toJSON(), navigator.userAgent.slice(0, 120));
       setInscritoAqui(true);
@@ -106,4 +121,43 @@ export function useNotificacoes() {
     permissao, inscritoAqui, servidorHabilitado, emailConfigurado, ocupado,
     ativar, desativar, atualizar,
   };
+}
+
+/**
+ * Garante a inscrição push deste aparelho SEM pedir nada à pessoa (só se ela já permitiu
+ * antes). Roda uma vez por sessão: cobre troca de chave, banco limpo e novo login.
+ */
+export async function garantirInscricaoSilenciosa(): Promise<void> {
+  try {
+    if (!suportaPush() || Notification.permission !== 'granted') return;
+    const { habilitado, chave } = await api.notificacoes.chavePublica();
+    if (!habilitado || !chave) return;
+    const reg = (await registrarServiceWorker()) || (await navigator.serviceWorker.ready);
+    let sub = await reg.pushManager.getSubscription();
+    if (sub && !mesmaChave(sub, chave)) {
+      await sub.unsubscribe();
+      sub = null;
+    }
+    sub = sub || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chaveParaUint8(chave) }));
+    await api.notificacoes.inscrever(sub.toJSON(), navigator.userAgent.slice(0, 120));
+  } catch {
+    /* silencioso: tenta de novo na próxima sessão */
+  }
+}
+
+/**
+ * Ao sair da conta, este aparelho deixa de receber os avisos dela (importante em
+ * aparelho compartilhado: os lembretes de remédio de uma pessoa não podem aparecer para outra).
+ */
+export async function desinscreverEsteDispositivo(): Promise<void> {
+  try {
+    if (!suportaPush()) return;
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = await reg?.pushManager.getSubscription();
+    if (!sub) return;
+    await api.notificacoes.cancelar(sub.endpoint).catch(() => {});
+    await sub.unsubscribe();
+  } catch {
+    /* ignora */
+  }
 }

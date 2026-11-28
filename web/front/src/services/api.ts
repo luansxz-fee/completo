@@ -1,5 +1,5 @@
 const URL_BASE: string =
-  (import.meta as any).env?.VITE_API_URL || 'https://certo-fb4t.onrender.com/api';
+  (import.meta as any).env?.VITE_API_URL || 'https://certo-fb4t.onrender.com';
 
 export const CHAVE_TOKEN = 'medsync_token';
 
@@ -85,9 +85,9 @@ export const api = {
     listar: () => requisicao<{ dados: any[] }>('GET', '/medicamentos', undefined, COM_PACIENTE),
     criar: (dados: any) => requisicao<{ dados: any }>('POST', '/medicamentos', dados, COM_PACIENTE),
     atualizar: (id: string, dados: any) =>
-      requisicao<{ dados: any }>('PUT', '/medicamentos/${id}', dados, COM_PACIENTE),
-    excluir: (id: string) => requisicao<any>('DELETE', '/medicamentos/${id}', undefined, COM_PACIENTE),
-    alternar: (id: string) => requisicao<{ dados: any }>('PATCH', '/medicamentos/${id}/alternar', undefined, COM_PACIENTE),
+      requisicao<{ dados: any }>('PUT', `/medicamentos/${id}`, dados, COM_PACIENTE),
+    excluir: (id: string) => requisicao<any>('DELETE', `/medicamentos/${id}`, undefined, COM_PACIENTE),
+    alternar: (id: string) => requisicao<{ dados: any }>('PATCH', `/medicamentos/${id}/alternar`, undefined, COM_PACIENTE),
   },
 
   registros: {
@@ -109,13 +109,13 @@ export const api = {
     convidar: (email: string, permissao: string, apelido?: string) =>
       requisicao<any>('POST', '/cuidadores/convidar', { email, permissao, apelido }),
     atualizar: (id: string, dados: { permissao?: string; apelido?: string }) =>
-      requisicao<any>('PATCH', '/cuidadores/${id}', dados),
-    revogar: (id: string) => requisicao<any>('DELETE', '/cuidadores/${id}'),
+      requisicao<any>('PATCH', `/cuidadores/${id}`, dados),
+    revogar: (id: string) => requisicao<any>('DELETE', `/cuidadores/${id}`),
     convites: () => requisicao<{ dados: any[] }>('GET', '/cuidadores/convites'),
-    aceitar: (id: string) => requisicao<any>('POST', '/cuidadores/${id}/aceitar'),
-    recusar: (id: string) => requisicao<any>('POST', '/cuidadores/${id}/recusar'),
+    aceitar: (id: string) => requisicao<any>('POST', `/cuidadores/${id}/aceitar`),
+    recusar: (id: string) => requisicao<any>('POST', `/cuidadores/${id}/recusar`),
     pacientes: () => requisicao<{ dados: any[] }>('GET', '/cuidadores/pacientes'),
-    resumo: (pacienteId: string) => requisicao<{ dados: any }>('GET', '/cuidadores/pacientes/${pacienteId}/resumo'),
+    resumo: (pacienteId: string) => requisicao<{ dados: any }>('GET', `/cuidadores/pacientes/${pacienteId}/resumo`),
   },
 
   notificacoes: {

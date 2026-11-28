@@ -47,6 +47,7 @@ const DURACOES = [
 
 type EstadoImagem = 'vazio' | 'carregando' | 'ok' | 'erro';
 const ETAPAS = ['Básico', 'Horários e estoque', 'Imagem e detalhes'];
+const ETAPAS_CURTAS = ['Básico', 'Horários', 'Detalhes'];
 
 export default function MedModal({ medication, onClose }: Props) {
   const { addMedication, updateMedication } = useMed();
@@ -176,9 +177,9 @@ export default function MedModal({ medication, onClose }: Props) {
       topo={
         <ol className="steps-indicator" aria-label="Etapas">
           {[1, 2, 3].map((s) => (
-            <li key={s} className={`step-dot ${etapa >= s ? 'step-dot--active' : ''} ${etapa === s ? 'step-dot--current' : ''}`} aria-current={etapa === s ? 'step' : undefined}>
+            <li key={s} className={`step-dot ${etapa >= s ? 'step-dot--active' : ''} ${etapa > s ? 'step-dot--done' : ''} ${etapa === s ? 'step-dot--current' : ''}`} aria-current={etapa === s ? 'step' : undefined}>
               <span aria-hidden="true">{etapa > s ? '✓' : s}</span>
-              <small className="step-dot__label">{ETAPAS[s - 1]}</small>
+              <small className="step-dot__label">{ETAPAS_CURTAS[s - 1]}</small>
             </li>
           ))}
         </ol>
@@ -202,14 +203,14 @@ export default function MedModal({ medication, onClose }: Props) {
         <div className="modal-step">
           <div className="form-group">
             <label htmlFor={`${uid}-nome`}>Nome do medicamento *</label>
-            <input id={`${uid}-nome`} data-autofocus value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Losartana" className={erros.nome ? 'input--error' : ''} maxLength={100} {...campoErro('nome')} />
+            <input id={`${uid}-nome`} type="text" data-autofocus value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Losartana" className={erros.nome ? 'input--error' : ''} maxLength={100} {...campoErro('nome')} />
             {msg('nome')}
           </div>
 
           <div className="form-row form-row--3">
             <div className="form-group">
               <label htmlFor={`${uid}-dose`}>Dosagem *</label>
-              <input id={`${uid}-dose`} value={dosagem} onChange={(e) => setDosagem(e.target.value)} placeholder="50" inputMode="decimal" className={erros.dosagem ? 'input--error' : ''} {...campoErro('dosagem')} />
+              <input id={`${uid}-dose`} type="text" value={dosagem} onChange={(e) => setDosagem(e.target.value)} placeholder="50" inputMode="decimal" className={erros.dosagem ? 'input--error' : ''} {...campoErro('dosagem')} />
               {msg('dosagem')}
             </div>
             <div className="form-group">
@@ -347,11 +348,11 @@ export default function MedModal({ medication, onClose }: Props) {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor={`${uid}-med`}>Médico(a) prescritor(a)</label>
-              <input id={`${uid}-med`} value={medico} onChange={(e) => setMedico(e.target.value)} placeholder="Dra. Ana Lima" />
+              <input id={`${uid}-med`} type="text" value={medico} onChange={(e) => setMedico(e.target.value)} placeholder="Dra. Ana Lima" />
             </div>
             <div className="form-group">
               <label htmlFor={`${uid}-crm`}>CRM</label>
-              <input id={`${uid}-crm`} value={crm} onChange={(e) => setCrm(e.target.value)} placeholder="CRM/SP 123456" />
+              <input id={`${uid}-crm`} type="text" value={crm} onChange={(e) => setCrm(e.target.value)} placeholder="CRM/SP 123456" />
             </div>
           </div>
           <div className="form-group">

@@ -72,6 +72,18 @@ const AuthController = {
         usuario = await UsuarioModel.criar({ nome, email: emailBruto, senha, fusoHorario });
       }
 
+      // Sem provedor de e-mail o código jamais chegaria: entra direto (nunca trava o cadastro).
+      if (!email.verificacaoObrigatoria()) {
+        const ativo = await UsuarioModel.marcarEmailVerificado(usuario._id);
+        return res.status(201).json({
+          sucesso: true,
+          verificacaoDispensada: true,
+          mensagem: 'Conta criada com sucesso!',
+          token: gerarToken(ativo),
+          usuario: UsuarioModel.formatar(ativo),
+        });
+      }
+
       const envio = await enviarVerificacao(usuario, { ignorarEspera: true });
 
       return res.status(201).json({
@@ -170,10 +182,14 @@ const AuthController = {
   async login(req, res, next) {
     try {
       const { email: emailBruto, senha, fusoHorario } = req.body;
-      const usuario = await UsuarioModel.buscarPorEmail(emailBruto);
+      let usuario = await UsuarioModel.buscarPorEmail(emailBruto);
 
       if (!usuario || !(await UsuarioModel.verificarSenha(senha, usuario.senha))) {
         return res.status(401).json({ sucesso: false, mensagem: 'E-mail ou senha incorretos' });
+      }
+
+      if (!usuario.email_verificado && !email.verificacaoObrigatoria()) {
+        usuario = await UsuarioModel.marcarEmailVerificado(usuario._id);
       }
 
       if (!usuario.email_verificado) {

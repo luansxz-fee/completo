@@ -92,7 +92,7 @@ const UsuarioModel = {
     if (acessibilidade !== undefined) campos.acessibilidade = sanitizarAcessibilidade(acessibilidade);
 
     if (Object.keys(campos).length === 0) return Usuario.findById(id);
-    return Usuario.findByIdAndUpdate(id, { $set: campos }, { new: true, runValidators: true });
+    return Usuario.findByIdAndUpdate(id, { $set: campos }, { returnDocument: 'after', runValidators: true });
   },
 
   async alterarSenha(id, novaSenha) {
@@ -108,7 +108,7 @@ const UsuarioModel = {
     return Usuario.findByIdAndUpdate(
       id,
       { $set: { email_verificado: true, email_verificado_em: new Date() } },
-      { new: true }
+      { returnDocument: 'after' }
     );
   },
 

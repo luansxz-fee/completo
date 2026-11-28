@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const UsuarioModel = require('../models/UserModel');
 const { env } = require('../config/env');
+const { verificacaoObrigatoria } = require('../services/emailService');
 
 async function autenticar(req, res, next) {
   try {
@@ -24,6 +25,10 @@ async function autenticar(req, res, next) {
     }
 
     // Sessões antigas (de antes da verificação de e-mail) também precisam confirmar.
+    if (!usuario.email_verificado && !verificacaoObrigatoria()) {
+      await UsuarioModel.marcarEmailVerificado(usuario._id); // verificação dispensada: não trava a conta
+      usuario.email_verificado = true;
+    }
     if (!usuario.email_verificado) {
       return res.status(403).json({
         sucesso: false,

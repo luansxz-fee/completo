@@ -1,12 +1,11 @@
 const InscricaoPushModel = require('../models/InscricaoPushModel');
-const { pushHabilitado } = require('../services/pushService');
+const { pushHabilitado, chavePublica } = require('../services/pushService');
 const notificacao = require('../services/notificacaoService');
 const email = require('../services/emailService');
-const { env } = require('../config/env');
 
 const NotificacaoController = {
   chavePublica(req, res) {
-    res.json({ sucesso: true, habilitado: pushHabilitado(), chave: pushHabilitado() ? env.vapidPublica : null });
+    res.json({ sucesso: true, habilitado: pushHabilitado(), chave: chavePublica() });
   },
 
   async status(req, res, next) {

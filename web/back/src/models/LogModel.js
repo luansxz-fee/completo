@@ -154,7 +154,7 @@ const RegistroDoseModel = {
       RegistroDose.findOneAndUpdate(
         filtro,
         { $set: dados },
-        { new: true, upsert: true, setDefaultsOnInsert: true, runValidators: true }
+        { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true, runValidators: true }
       );
 
     let registro;

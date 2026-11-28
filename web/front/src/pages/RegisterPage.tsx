@@ -30,6 +30,8 @@ export default function RegisterPage({ navigate }: Props) {
     const r = await registrar(nome, email, senha);
     setCarregando(false);
     if (!r.ok) return setErro(r.mensagem || 'Não foi possível criar a conta.');
+    if (!r.requerVerificacao) return; // já entrou (servidor sem verificação)
+    if (r.emailEnviado === false) sessionStorage.setItem('medsync_verif_falha', '1');
     navigate('verify-email', r.email || email);
   };
 

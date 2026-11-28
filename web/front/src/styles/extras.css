@@ -325,3 +325,91 @@ html[data-contraste="alto"] .search-box { border: 0 !important; }
 html:not([data-daltonismo="nenhum"]) .stat-card--green { background: linear-gradient(135deg, var(--success), color-mix(in srgb, var(--success) 65%, #000)); }
 html:not([data-daltonismo="nenhum"]) .stat-card--orange { background: linear-gradient(135deg, var(--orange), color-mix(in srgb, var(--orange) 65%, #000)); }
 html:not([data-daltonismo="nenhum"]) .stat-card--teal { background: linear-gradient(135deg, var(--success), color-mix(in srgb, var(--success) 65%, #000)); }
+
+/* =====================================================================
+   CAMPOS DE FORMULÁRIO — um visual único para TODOS (inclusive os sem atributo type,
+   que antes caíam no estilo branco padrão do navegador, ilegível no tema escuro)
+   ===================================================================== */
+:where(input:not([type]), input[type="text"], input[type="email"], input[type="password"], input[type="number"],
+  input[type="url"], input[type="search"], input[type="tel"], input[type="date"], input[type="time"], select, textarea) {
+  width: 100%; min-height: 46px; padding: 11px 14px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); background-color: var(--bg-input); color: var(--text-primary);
+  font-family: inherit; font-size: 15px; line-height: 1.4; outline: none; transition: all var(--transition);
+}
+:where(input, select, textarea)::placeholder { color: var(--text-muted); opacity: .85; }
+textarea { min-height: 88px; }
+.input-wrap input { padding-right: 46px; }
+.search-box input { border: 0 !important; background: transparent !important; min-height: 0; padding: 0; box-shadow: none !important; }
+input:-webkit-autofill, input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary); -webkit-box-shadow: 0 0 0 40px var(--bg-input) inset; caret-color: var(--text-primary);
+}
+/* iPhone: abaixo de 16 px o Safari dá zoom ao tocar no campo */
+@media (max-width: 820px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(.codigo-campo):not(.input--codigo):not(.profile-name-input),
+  select, textarea { font-size: 16px !important; }
+}
+
+/* Callout de aviso */
+.form-warn { background: var(--warning-bg); border: 1px solid var(--warning); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; line-height: 1.45; color: var(--text-primary); }
+
+/* =====================================================================
+   MODAL — indicador de etapas mais limpo e área segura do iPhone
+   ===================================================================== */
+.steps-indicator { padding: 18px 20px 4px; }
+.step-dot { gap: 6px; min-width: 0; }
+.step-dot::after { top: 15px !important; left: calc(50% + 24px) !important; width: calc(100% - 48px) !important; height: 3px !important; border-radius: 2px; }
+.step-dot--active:not(:last-child)::after { background: var(--border); }
+.step-dot--done:not(:last-child)::after { background: var(--brand); }
+.step-dot > span { width: 30px; height: 30px; font-size: 13px; }
+.step-dot .step-dot__label { font-size: 12px; font-weight: 600; white-space: nowrap; letter-spacing: .01em; }
+.modal { max-height: 92vh; max-height: calc(92dvh / var(--zoom)); }
+.modal__footer { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); gap: 10px; }
+.modal__body { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+@media (max-width: 560px) {
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal { border-bottom-left-radius: 0; border-bottom-right-radius: 0; box-shadow: 0 -12px 40px rgba(0,0,0,.45); }
+  .modal__header { padding: 16px 18px; }
+  .modal__body { padding: 18px; gap: 14px; }
+  .modal__footer { padding-left: 18px; padding-right: 18px; }
+  .modal__footer .btn { flex: 0 1 auto; min-height: 46px; }
+  .steps-indicator { padding: 14px 12px 2px; }
+}
+
+/* =====================================================================
+   NOTIFICAÇÕES — cartão, selos, banner e guia de instalação
+   ===================================================================== */
+.notif-card { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.notif-card__topo { display: flex; gap: 14px; align-items: flex-start; }
+.notif-card__icone { width: 48px; height: 48px; border-radius: 14px; background: var(--brand-light); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+.notif-card__topo .card-section-title { margin-bottom: 4px; }
+.notif-bloco { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 4px 16px; background: var(--bg-card); }
+.notif-bloco__linha { display: flex; gap: 14px; align-items: center; justify-content: space-between; padding: 14px 0; }
+.notif-bloco__linha + .notif-bloco__linha { border-top: 1px solid var(--border); }
+.notif-bloco__texto { min-width: 0; flex: 1; }
+.notif-bloco__titulo { font-weight: 700; font-size: 14.5px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.notif-bloco__texto p { margin-top: 4px; font-size: 13px; line-height: 1.45; color: var(--text-secondary); overflow-wrap: anywhere; }
+.notif-bloco__acoes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.notif-bloco__nota { font-size: 12.5px; color: var(--text-secondary); padding: 0 0 14px; }
+@media (max-width: 520px) {
+  .notif-bloco__linha { flex-wrap: wrap; }
+  .notif-bloco__acoes { width: 100%; justify-content: stretch; }
+  .notif-bloco__acoes .btn { flex: 1; }
+}
+.selo { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: var(--radius-full); font-size: 11.5px; font-weight: 800; letter-spacing: .02em; border: 1.5px solid currentColor; }
+.selo--ok { color: var(--success); background: var(--success-bg); }
+.selo--aviso { color: var(--warning-text, var(--warning)); background: var(--warning-bg); }
+.selo--neutro { color: var(--text-secondary); background: var(--bg-hover); }
+.selo--ok::before { content: '✓'; } .selo--aviso::before { content: '!'; }
+
+.banner-notif { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 18px; border-radius: var(--radius); border: 1.5px solid var(--brand); background: var(--brand-light); }
+.banner-notif__icone { font-size: 26px; }
+.banner-notif__texto { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 200px; font-size: 13.5px; color: var(--text-secondary); }
+.banner-notif__texto strong { color: var(--text-primary); font-size: 15px; }
+.banner-notif__acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.guia-passos { display: flex; flex-direction: column; gap: 16px; margin: 4px 0 8px; }
+.guia-passos li { display: flex; gap: 14px; align-items: flex-start; }
+.guia-passos__num { width: 32px; height: 32px; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.guia-passos strong { display: block; font-size: 15px; }
+.guia-passos p { margin-top: 3px; font-size: 13.5px; line-height: 1.45; color: var(--text-secondary); }
+.guia-icone { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1.5px solid currentColor; border-radius: 6px; font-size: 14px; vertical-align: middle; margin-left: 4px; }

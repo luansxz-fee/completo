@@ -7,6 +7,7 @@ import { Page } from '../components/AppRouter';
 import MedModal from '../components/MedModal';
 import Modal from '../components/Modal';
 import Braille from '../components/Braille';
+import BannerNotificacoes from '../components/BannerNotificacoes';
 import BotaoOuvir from '../components/BotaoOuvir';
 import StatusDose, { PontoStatus, Estado } from '../components/StatusDose';
 import { hojeLocal } from '../utils/datas';
@@ -80,6 +81,8 @@ export default function Dashboard({ navigate }: Props) {
           )}
         </div>
       </div>
+
+      {!paciente && <BannerNotificacoes />}
 
       {atrasadas.length > 0 && (
         <div className="aviso-atraso" role="alert">

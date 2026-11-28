@@ -9,7 +9,6 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "setup-db": "node src/config/setupDatabase.js",
-    "gerar-vapid": "node scripts/gerar-vapid.js",
     "test": "node --test --test-concurrency=1 \"test/**/*.test.js\""
   },
   "dependencies": {

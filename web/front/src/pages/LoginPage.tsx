@@ -21,7 +21,11 @@ export default function LoginPage({ navigate }: Props) {
     const r = await login(email, senha);
     setCarregando(false);
     if (r.ok) return;
-    if (r.requerVerificacao) { navigate('verify-email', r.email || email); return; }
+    if (r.requerVerificacao) {
+      if (r.emailEnviado === false) sessionStorage.setItem('medsync_verif_falha', '1');
+      navigate('verify-email', r.email || email);
+      return;
+    }
     setErro(r.mensagem || 'E-mail ou senha incorretos.');
   };
 

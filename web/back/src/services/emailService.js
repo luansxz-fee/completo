@@ -27,6 +27,36 @@ function emailConfigurado() {
   return escolherProvedor() !== 'console';
 }
 
+/**
+ * A confirmação de e-mail por código é OBRIGATÓRIA quando existe um provedor real
+ * configurado. Sem provedor (o código nunca chegaria) ela é dispensada automaticamente,
+ * para que qualquer pessoa consiga criar conta e entrar. Force com VERIFICACAO_EMAIL=
+ * obrigatoria | dispensada.
+ */
+function verificacaoObrigatoria() {
+  const modo = (process.env.VERIFICACAO_EMAIL || '').toLowerCase();
+  if (modo === 'obrigatoria') return true;
+  if (modo === 'dispensada') return false;
+  return emailConfigurado();
+}
+
+function diagnostico() {
+  const provedor = escolherProvedor();
+  const de = remetente();
+  const avisos = [];
+  if (provedor === 'console') avisos.push('Nenhum provedor de e-mail configurado: os códigos NÃO são enviados (defina BREVO_API_KEY e EMAIL_REMETENTE).');
+  if (provedor === 'smtp') avisos.push('SMTP costuma ser bloqueado no plano gratuito do Render. Prefira o Brevo.');
+  if (provedor === 'resend') avisos.push('O Resend só entrega a qualquer endereço depois de verificar um domínio; sem isso entrega apenas ao dono da conta.');
+  if (['brevo', 'resend'].includes(provedor) && !process.env.EMAIL_REMETENTE) avisos.push('Defina EMAIL_REMETENTE com um remetente verificado.');
+  return {
+    provedor,
+    configurado: provedor !== 'console',
+    remetente: de.email,
+    verificacaoEmail: verificacaoObrigatoria() ? 'obrigatoria' : 'dispensada',
+    avisos,
+  };
+}
+
 function remetente() {
   const bruto = process.env.EMAIL_REMETENTE || `MedSync <${process.env.EMAIL_USUARIO || 'nao-responda@medsync.app'}>`;
   const m = bruto.match(/^\s*(.*?)\s*<(.+?)>\s*$/);
@@ -60,7 +90,16 @@ async function enviarPorBrevo({ para, assunto, html, texto }) {
     }),
   });
   if (!resposta.ok) {
-    throw new Error(`Brevo respondeu ${resposta.status}: ${(await resposta.text()).slice(0, 300)}`);
+    const corpo = (await resposta.text()).slice(0, 400);
+    if (/sender|not valid|unauthorized|invalid/i.test(corpo)) {
+      const erro = new Error(
+        `Brevo recusou o envio (${resposta.status}). Confira se BREVO_API_KEY está certa e se o e-mail de EMAIL_REMETENTE ` +
+          `foi cadastrado e confirmado em Brevo → Senders. Detalhe: ${corpo}`
+      );
+      erro.codigo = 'BREVO_RECUSOU';
+      throw erro;
+    }
+    throw new Error(`Brevo respondeu ${resposta.status}: ${corpo}`);
   }
   return resposta.json().catch(() => ({}));
 }
@@ -76,7 +115,16 @@ async function enviarPorResend({ para, assunto, html, texto }) {
     body: JSON.stringify({ from: `${de.nome} <${de.email}>`, to: [para], subject: assunto, html, text: texto }),
   });
   if (!resposta.ok) {
-    throw new Error(`Resend respondeu ${resposta.status}: ${(await resposta.text()).slice(0, 300)}`);
+    const corpo = (await resposta.text()).slice(0, 400);
+    if (resposta.status === 403 && /only send testing emails|verify a domain/i.test(corpo)) {
+      const erro = new Error(
+        'O Resend está em modo de teste: só entrega para o e-mail do dono da conta. ' +
+          'Para enviar a QUALQUER endereço, use o Brevo (BREVO_API_KEY) ou verifique um domínio no Resend.'
+      );
+      erro.codigo = 'PROVEDOR_SO_PARA_DONO';
+      throw erro;
+    }
+    throw new Error(`Resend respondeu ${resposta.status}: ${corpo}`);
   }
   return resposta.json().catch(() => ({}));
 }
@@ -241,6 +289,8 @@ async function enviarEstoqueBaixo(destino, nome, { medicamento, restante }) {
 module.exports = {
   enviar,
   emailConfigurado,
+  verificacaoObrigatoria,
+  diagnostico,
   escolherProvedor,
   ultimosEmails,
   enviarCodigoVerificacao,

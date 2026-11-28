@@ -3,9 +3,8 @@
 ```bash
 cp .env.example .env     # preencha (veja docs/GUIA-DE-DEPLOY.md)
 npm install
-npm run gerar-vapid      # chaves do Web Push → cole no .env
 npm run dev              # http://localhost:3001/api/health
-npm test                 # 11 testes de integração (precisa de MongoDB em 127.0.0.1:27017)
+npm test                 # 16 testes de integração (precisa de MongoDB em 127.0.0.1:27017)
 ```
 
 ## O que a API faz
@@ -15,7 +14,8 @@ npm test                 # 11 testes de integração (precisa de MongoDB em 127.
 | Medicamentos | `GET/POST /api/medicamentos`, `PUT/DELETE /:id`, `PATCH /:id/alternar` |
 | Doses | `POST /api/registros` (aceita `tomada/TOMADO/taken…`), `GET /registros`, `/hoje`, `/adesao` |
 | Cuidadores | `/api/cuidadores/*` (convidar, aceitar, permissões, resumo do paciente). Cabeçalho `X-Paciente-Id` faz o cuidador agir sobre os dados do paciente |
-| Notificações | `/api/notificacoes/*` (inscrição push, teste, status) |
+| Notificações | `/api/notificacoes/*` (inscrição push, teste, status). Chaves VAPID geradas e guardadas automaticamente |
+| Diagnóstico | `GET /api/interno/diagnostico?segredo=…&enviarPara=email` (estado do e-mail/push + e-mail de teste) |
 | Lembretes | agendador interno + `GET/POST /api/interno/lembretes` (gatilho externo protegido por `CRON_SECRET`) |
 
 ## Como os lembretes funcionam

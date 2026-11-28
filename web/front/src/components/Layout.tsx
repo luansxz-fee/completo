@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAcessibilidade } from '../context/AcessibilidadeContext';
 import { usePaciente } from '../context/PacienteContext';
 import { useLembretesLocais } from '../hooks/useLembretesLocais';
+import { garantirInscricaoSilenciosa } from '../hooks/useNotificacoes';
 import { Page, TITULOS } from './AppRouter';
 import Logo from './Logo';
 
@@ -29,6 +30,13 @@ export default function Layout({ children, page, navigate }: LayoutProps) {
   const [menuAberto, setMenuAberto] = useState(false);
 
   useLembretesLocais();
+
+  // Quem já permitiu notificações é reinscrito sozinho (nova chave, novo login, banco limpo…).
+  useEffect(() => {
+    if (sessionStorage.getItem('medsync_push_ok') === usuario?.id) return;
+    sessionStorage.setItem('medsync_push_ok', usuario?.id || '');
+    void garantirInscricaoSilenciosa();
+  }, [usuario?.id]);
 
   // Atalhos: Alt+Shift+1..5 navegam entre as telas.
   useEffect(() => {

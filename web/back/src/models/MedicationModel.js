@@ -358,7 +358,7 @@ const MedicamentoModel = {
           $set: atualizacao,
         },
         {
-          new: true,
+          returnDocument: 'after',
           runValidators: true,
         }
       );
@@ -385,7 +385,7 @@ const MedicamentoModel = {
     const doc = await Medicamento.findOneAndUpdate(
       filtro,
       { $inc: { estoque_atual: delta } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     return doc ? this.formatar(doc) : this.buscarUm(id, usuarioId);
   },

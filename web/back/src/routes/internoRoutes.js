@@ -2,6 +2,8 @@ const router = require('express').Router();
 const crypto = require('crypto');
 const { env } = require('../config/env');
 const { processarSeguro } = require('../services/lembreteService');
+const email = require('../services/emailService');
+const push = require('../services/pushService');
 
 /**
  * Gatilho externo do agendador. Use um serviço gratuito de "cron" (ex.: cron-job.org)
@@ -29,6 +31,35 @@ async function executar(req, res) {
   return res.json({ sucesso: true, ocupado: resumo === null, resumo });
 }
 
+/**
+ * Diagnóstico para quem administra o servidor (use o mesmo CRON_SECRET):
+ *   GET /api/interno/diagnostico?segredo=...                   → estado do e-mail e do push
+ *   GET /api/interno/diagnostico?segredo=...&enviarPara=a@b.c  → também envia um e-mail de teste
+ */
+async function diagnosticar(req, res) {
+  if (!env.cronSecret) return res.status(503).json({ sucesso: false, mensagem: 'CRON_SECRET não configurado no servidor.' });
+  const enviado = req.headers['x-cron-secret'] || req.query.segredo || '';
+  if (!seguro(enviado, env.cronSecret)) return res.status(401).json({ sucesso: false, mensagem: 'Não autorizado' });
+
+  const resposta = { sucesso: true, email: email.diagnostico(), push: { ativo: push.pushHabilitado() } };
+  const para = String(req.query.enviarPara || '').trim();
+  if (para) {
+    try {
+      await email.enviar({
+        para,
+        assunto: '✅ Teste do MedSync',
+        texto: 'Se você recebeu este e-mail, o envio do MedSync está funcionando para qualquer endereço.',
+        html: '<p>Se você recebeu este e-mail, o envio do MedSync está funcionando para qualquer endereço. ✅</p>',
+      });
+      resposta.testeEmail = { enviadoPara: para, ok: true };
+    } catch (erro) {
+      resposta.testeEmail = { enviadoPara: para, ok: false, erro: erro.message };
+    }
+  }
+  return res.json(resposta);
+}
+
+router.get('/diagnostico', diagnosticar);
 router.get('/lembretes', executar);
 router.post('/lembretes', executar);
 

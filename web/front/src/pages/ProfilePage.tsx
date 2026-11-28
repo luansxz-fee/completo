@@ -94,7 +94,7 @@ export default function ProfilePage({ navigate }: Props) {
             {editando ? (
               <div className="profile-edit-row">
                 <label htmlFor="perfil-nome" className="sr-only">Nome</label>
-                <input id="perfil-nome" className="profile-name-input" value={nome} onChange={(e) => setNome(e.target.value)} data-autofocus autoFocus />
+                <input id="perfil-nome" type="text" className="profile-name-input" value={nome} onChange={(e) => setNome(e.target.value)} data-autofocus autoFocus />
                 <button type="button" className="btn btn--primary btn--sm" onClick={() => void salvarNome()}>Salvar</button>
                 <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setEditando(false); setNome(usuario?.nome || ''); }}>Cancelar</button>
               </div>

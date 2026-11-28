@@ -2,14 +2,24 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useAcessibilidade } from '../context/AcessibilidadeContext';
 import { useNotificacoes } from '../hooks/useNotificacoes';
+import { usePwa } from '../hooks/usePwa';
 import { api } from '../services/api';
 import Interruptor from './Interruptor';
+import GuiaInstalacao from './GuiaInstalacao';
+
+type Tom = 'ok' | 'aviso' | 'neutro';
+
+function Selo({ tom, children }: { tom: Tom; children: React.ReactNode }) {
+  return <span className={`selo selo--${tom}`}>{children}</span>;
+}
 
 export default function NotificacoesCard() {
   const { usuario, atualizarUsuario } = useAuth();
   const { avisar } = useAcessibilidade();
   const n = useNotificacoes();
+  const pwa = usePwa();
   const [testando, setTestando] = useState(false);
+  const [guia, setGuia] = useState(false);
   const prefs = usuario?.notificacoes || { push: true, emailLembretes: true, emailCuidador: true };
 
   const mudar = async (campo: 'push' | 'emailLembretes' | 'emailCuidador', valor: boolean) => {
@@ -24,7 +34,7 @@ export default function NotificacoesCard() {
   const ativar = async () => {
     const problema = await n.ativar();
     if (problema) avisar(problema, 'erro');
-    else avisar('Notificações ativadas neste dispositivo.', 'sucesso');
+    else avisar('Pronto! Você vai receber os lembretes neste aparelho.', 'sucesso');
   };
 
   const testar = async () => {
@@ -32,9 +42,9 @@ export default function NotificacoesCard() {
     try {
       const r = await api.notificacoes.teste(true);
       if (r.push > 0 || r.email) {
-        avisar(`Teste enviado${r.push ? ' (notificação)' : ''}${r.email ? ' e e-mail' : ''}. Confira!`, 'sucesso');
+        avisar(`Teste enviado${r.push ? ' (notificação)' : ''}${r.email ? ` e e-mail para ${usuario?.email}` : ''}. Confira!`, 'sucesso');
       } else {
-        avisar('Nada foi entregue. Ative as notificações neste dispositivo ou confira o e-mail do servidor.', 'erro');
+        avisar('Nada foi entregue ainda. Ative as notificações neste aparelho e confira a caixa de e-mail.', 'erro');
       }
     } catch (e: any) {
       avisar(e?.message || 'Falha no teste.', 'erro');
@@ -43,84 +53,88 @@ export default function NotificacoesCard() {
     }
   };
 
-  const estadoPush = !n.suportado
-    ? n.ios && !n.instalado
-      ? 'No iPhone/iPad é preciso instalar: Compartilhar → “Adicionar à Tela de Início”.'
-      : 'Este navegador não suporta notificações push.'
-    : n.permissao === 'denied'
-    ? 'Bloqueadas no navegador. Libere nas configurações do site.'
-    : n.inscritoAqui
-    ? 'Ativas neste dispositivo.'
-    : 'Ainda não ativadas neste dispositivo.';
+  // Situação das notificações NESTE aparelho
+  const precisaInstalarNoIphone = n.ios && !pwa.instalado && !n.suportado;
+  let estado: { tom: Tom; titulo: string; texto: string };
+  if (precisaInstalarNoIphone) {
+    estado = { tom: 'aviso', titulo: 'Precisa instalar', texto: 'No iPhone/iPad as notificações só funcionam com o MedSync instalado na Tela de Início.' };
+  } else if (!n.suportado) {
+    estado = { tom: 'neutro', titulo: 'Indisponível neste navegador', texto: 'Este navegador não permite notificações. Os lembretes por e-mail continuam funcionando.' };
+  } else if (n.permissao === 'denied') {
+    estado = { tom: 'aviso', titulo: 'Bloqueadas', texto: 'As notificações foram bloqueadas. Toque no cadeado ao lado do endereço do site e permita “Notificações”.' };
+  } else if (n.inscritoAqui) {
+    estado = { tom: 'ok', titulo: 'Ativas neste aparelho', texto: 'Você receberá o aviso na hora de cada dose, mesmo com o site fechado.' };
+  } else {
+    estado = { tom: 'neutro', titulo: 'Ainda não ativadas', texto: 'Toque em “Ativar” para receber o aviso na hora de cada dose. Leva um segundo.' };
+  }
 
   return (
-    <div className="card" style={{ width: '100%' }}>
-      <h2 className="card-section-title" id="titulo-notif">Notificações e lembretes</h2>
-      <p className="form-hint">
-        O MedSync avisa no horário de cada dose, repete se você ainda não tiver registrado e, se houver cuidadores,
-        avisa eles quando a dose atrasar.
-      </p>
+    <section className="card notif-card" aria-labelledby="titulo-notif">
+      <header className="notif-card__topo">
+        <div className="notif-card__icone" aria-hidden="true">🔔</div>
+        <div>
+          <h2 className="card-section-title" id="titulo-notif">Lembretes e notificações</h2>
+          <p className="form-hint">Avisamos na hora de cada dose, repetimos se você esquecer e, se houver cuidadores, eles são avisados quando atrasar.</p>
+        </div>
+      </header>
 
-      <div className="profile-items" role="group" aria-labelledby="titulo-notif">
-        <div className="profile-item">
-          <div className="profile-item__left">
-            <span className="profile-item__icon" aria-hidden="true">🔔</span>
-            <div>
-              <strong>Notificações neste dispositivo</strong>
-              <p>{estadoPush}</p>
-            </div>
+      <div className="notif-bloco">
+        <div className="notif-bloco__linha">
+          <div className="notif-bloco__texto">
+            <div className="notif-bloco__titulo"><span aria-hidden="true">📱</span> Neste aparelho <Selo tom={estado.tom}>{estado.titulo}</Selo></div>
+            <p>{estado.texto}</p>
           </div>
-          {n.suportado && (
-            n.inscritoAqui ? (
+          <div className="notif-bloco__acoes">
+            {precisaInstalarNoIphone && <button type="button" className="btn btn--primary btn--sm" onClick={() => setGuia(true)}>Como instalar</button>}
+            {n.suportado && !n.inscritoAqui && n.permissao !== 'denied' && (
+              <button type="button" className="btn btn--primary btn--sm" onClick={() => void ativar()} disabled={n.ocupado}>{n.ocupado ? 'Ativando…' : 'Ativar'}</button>
+            )}
+            {n.suportado && n.inscritoAqui && (
               <button type="button" className="btn btn--outline btn--sm" onClick={() => void n.desativar()} disabled={n.ocupado}>Desativar</button>
-            ) : (
-              <button type="button" className="btn btn--primary btn--sm" onClick={() => void ativar()} disabled={n.ocupado || n.permissao === 'denied'}>
-                {n.ocupado ? 'Ativando…' : 'Ativar'}
-              </button>
-            )
-          )}
+            )}
+            {pwa.podeInstalar && !pwa.ios && (
+              <button type="button" className="btn btn--outline btn--sm" onClick={() => void pwa.instalar()}>Instalar como app</button>
+            )}
+          </div>
         </div>
 
         {n.servidorHabilitado === false && (
-          <div className="form-warn" role="alert">
-            O servidor ainda não tem as chaves de push (VAPID) configuradas — veja o README. Lembretes por e-mail continuam valendo.
-          </div>
+          <p className="notif-bloco__nota">As notificações do navegador estão temporariamente indisponíveis. Você continua recebendo por e-mail.</p>
         )}
+      </div>
 
-        <div className="profile-item">
-          <div className="profile-item__left">
-            <span className="profile-item__icon" aria-hidden="true">📲</span>
-            <div><strong>Receber notificações push</strong><p>Em todos os dispositivos ativados</p></div>
-          </div>
-          <Interruptor ligado={prefs.push} onChange={(v) => void mudar('push', v)} rotulo="Receber notificações push" />
-        </div>
-
-        <div className="profile-item">
-          <div className="profile-item__left">
-            <span className="profile-item__icon" aria-hidden="true">✉️</span>
-            <div><strong>Lembretes por e-mail</strong><p>Um e-mail na hora de cada dose ({usuario?.email})</p></div>
+      <div className="notif-bloco">
+        <div className="notif-bloco__linha">
+          <div className="notif-bloco__texto">
+            <div className="notif-bloco__titulo"><span aria-hidden="true">✉️</span> E-mail da sua conta {prefs.emailLembretes ? <Selo tom="ok">Ativo</Selo> : <Selo tom="neutro">Desligado</Selo>}</div>
+            <p>Os lembretes vão para <strong>{usuario?.email}</strong>.</p>
           </div>
           <Interruptor ligado={prefs.emailLembretes} onChange={(v) => void mudar('emailLembretes', v)} rotulo="Receber lembretes por e-mail" />
         </div>
+      </div>
 
-        <div className="profile-item">
-          <div className="profile-item__left">
-            <span className="profile-item__icon" aria-hidden="true">🤝</span>
-            <div><strong>Alertas de quem eu ajudo, por e-mail</strong><p>Quando um paciente seu atrasar uma dose</p></div>
+      <div className="notif-bloco">
+        <div className="notif-bloco__linha">
+          <div className="notif-bloco__texto">
+            <div className="notif-bloco__titulo"><span aria-hidden="true">📲</span> Notificações no navegador</div>
+            <p>Liga ou desliga em todos os seus aparelhos.</p>
+          </div>
+          <Interruptor ligado={prefs.push} onChange={(v) => void mudar('push', v)} rotulo="Receber notificações no navegador" />
+        </div>
+        <div className="notif-bloco__linha">
+          <div className="notif-bloco__texto">
+            <div className="notif-bloco__titulo"><span aria-hidden="true">🤝</span> Alertas de quem eu ajudo</div>
+            <p>E-mail quando um paciente seu atrasar uma dose.</p>
           </div>
           <Interruptor ligado={prefs.emailCuidador} onChange={(v) => void mudar('emailCuidador', v)} rotulo="Receber alertas de pacientes por e-mail" />
         </div>
-
-        <div className="profile-item">
-          <div className="profile-item__left">
-            <span className="profile-item__icon" aria-hidden="true">🧪</span>
-            <div><strong>Enviar um teste agora</strong><p>Confirma se a notificação e o e-mail estão chegando</p></div>
-          </div>
-          <button type="button" className="btn btn--outline btn--sm" onClick={() => void testar()} disabled={testando}>
-            {testando ? 'Enviando…' : 'Testar'}
-          </button>
-        </div>
       </div>
-    </div>
+
+      <button type="button" className="btn btn--outline btn--block" onClick={() => void testar()} disabled={testando}>
+        <span aria-hidden="true">🧪</span> {testando ? 'Enviando…' : 'Enviar um teste agora'}
+      </button>
+
+      {guia && <GuiaInstalacao onClose={() => setGuia(false)} />}
+    </section>
   );
 }

@@ -6,6 +6,7 @@
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'segredo-de-teste-com-mais-de-trinta-e-dois-caracteres';
 process.env.EMAIL_PROVIDER = 'console';
+process.env.VERIFICACAO_EMAIL = 'obrigatoria';
 process.env.BCRYPT_ROUNDS = '4';
 process.env.CRON_SECRET = 'cron-teste';
 process.env.FRONTEND_URL = 'http://localhost:5173';
@@ -57,6 +58,7 @@ test.before(async () => {
   await Promise.all(Object.values(mongoose.models).map((m) => m.init().catch(() => {})));
   const RegistroDoseModel = require('../src/models/LogModel');
   await RegistroDoseModel.sincronizarIndices();
+  await push.iniciar(); // gera as chaves VAPID sozinho
   servidor = criarApp().listen(0);
   base = `http://127.0.0.1:${servidor.address().port}`;
 });
@@ -338,4 +340,65 @@ test('exclusão de conta apaga tudo', async () => {
   assert.equal(r.status, 200);
   r = await req('POST', '/api/auth/login', { email: u.email, senha: u.senha });
   assert.equal(r.status, 401);
+});
+
+test('push: chaves VAPID são geradas sozinhas, guardadas no banco e estáveis', async () => {
+  const antes = push.chavePublica();
+  assert.ok(antes && antes.length > 40, 'deve existir chave pública sem nenhuma configuração manual');
+  const origem = await push.iniciar();
+  assert.equal(origem, 'banco');
+  assert.equal(push.chavePublica(), antes, 'reiniciar o servidor não pode trocar a chave');
+  const r = await req('GET', '/api/notificacoes/chave-publica');
+  assert.equal(r.json.habilitado, true);
+  assert.equal(r.json.chave, antes);
+});
+
+test('sem provedor de e-mail o cadastro NÃO trava: entra direto (verificação dispensada)', async () => {
+  process.env.VERIFICACAO_EMAIL = 'dispensada';
+  try {
+    const e = 'livre@teste.com';
+    let r = await req('POST', '/api/auth/registrar', { nome: 'Pessoa Livre', email: e, senha: 'Senha@123' });
+    assert.equal(r.status, 201);
+    assert.equal(r.json.verificacaoDispensada, true);
+    assert.ok(r.json.token, 'já devolve a sessão');
+    r = await req('GET', '/api/auth/eu', null, { token: r.json.token });
+    assert.equal(r.status, 200);
+    r = await req('POST', '/api/auth/login', { email: e, senha: 'Senha@123' });
+    assert.equal(r.status, 200);
+  } finally {
+    process.env.VERIFICACAO_EMAIL = 'obrigatoria';
+  }
+});
+
+test('conta antiga não confirmada consegue entrar quando a verificação é dispensada', async () => {
+  const e = 'antiga@teste.com';
+  await req('POST', '/api/auth/registrar', { nome: 'Conta Antiga', email: e, senha: 'Senha@123' }); // fica pendente
+  let r = await req('POST', '/api/auth/login', { email: e, senha: 'Senha@123' });
+  assert.equal(r.status, 403);
+  process.env.VERIFICACAO_EMAIL = 'dispensada';
+  try {
+    r = await req('POST', '/api/auth/login', { email: e, senha: 'Senha@123' });
+    assert.equal(r.status, 200);
+  } finally {
+    process.env.VERIFICACAO_EMAIL = 'obrigatoria';
+  }
+});
+
+test('o código vai para o e-mail digitado por cada pessoa (nunca para uma conta fixa)', async () => {
+  for (const e of ['um@teste.com', 'dois@outro.org', 'tres@qualquer.com.br']) {
+    await req('POST', '/api/auth/registrar', { nome: 'Pessoa Teste', email: e, senha: 'Senha@123' });
+    const enviado = [...email.ultimosEmails].reverse().find((m) => m.para === e);
+    assert.ok(enviado, `deveria ter enviado para ${e}`);
+    assert.match(enviado.texto, /\b\d{6}\b/);
+  }
+});
+
+test('diagnóstico do servidor exige o segredo e testa o envio para qualquer endereço', async () => {
+  let r = await req('GET', '/api/interno/diagnostico');
+  assert.equal(r.status, 401);
+  r = await req('GET', '/api/interno/diagnostico?segredo=cron-teste&enviarPara=alguem@exemplo.com');
+  assert.equal(r.status, 200);
+  assert.equal(r.json.testeEmail.ok, true);
+  assert.equal(r.json.push.ativo, true);
+  assert.ok(Array.isArray(r.json.email.avisos));
 });

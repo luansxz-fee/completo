@@ -27,7 +27,7 @@ const InscricaoPushModel = {
           dispositivo: dispositivo ? String(dispositivo).slice(0, 200) : null,
         },
       },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
+      { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
     );
   },
 

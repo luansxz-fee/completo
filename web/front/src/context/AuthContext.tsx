@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { User } from '../types';
 import { api, ApiError, CHAVE_TOKEN, EVENTO_SESSAO_INVALIDA } from '../services/api';
 import { fusoDoNavegador } from '../utils/datas';
+import { desinscreverEsteDispositivo } from '../hooks/useNotificacoes';
 
 const CHAVE_SESSAO = 'medsync_sessao';
 const CHAVE_USUARIO = 'medsync_usuario'; // lida pelo MedContext
@@ -12,6 +13,8 @@ export interface ResultadoAuth {
   requerVerificacao?: boolean;
   email?: string;
   mensagem?: string;
+  /** false = a conta foi criada, mas o servidor não conseguiu enviar o e-mail */
+  emailEnviado?: boolean;
   espera?: number;
   codigoDesenvolvimento?: string;
 }
@@ -56,6 +59,7 @@ function resultadoDeErro(erro: unknown): ResultadoAuth {
       mensagem: erro.message,
       requerVerificacao: !!erro.dados?.requerVerificacao,
       email: erro.dados?.email,
+      emailEnviado: erro.dados?.emailEnviado,
       espera: erro.dados?.espera,
       codigoDesenvolvimento: erro.dados?.codigoDesenvolvimento,
     };
@@ -67,10 +71,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [usuario, setUsuario] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const sair = useCallback(() => {
+  const limpar = useCallback(() => {
     limparSessao();
     setUsuario(null);
   }, []);
+
+  /** Sair de verdade: antes, tira este aparelho das notificações da conta. */
+  const sair = useCallback(() => {
+    const espera = new Promise<void>((r) => setTimeout(r, 1500));
+    void Promise.race([desinscreverEsteDispositivo(), espera]).finally(limpar);
+  }, [limpar]);
 
   // Restaura a sessão confirmando com o servidor.
   useEffect(() => {
@@ -98,16 +108,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       .catch((erro) => {
         if (erro instanceof ApiError && erro.status === 0) return; // offline: mantém o cache
-        sair();
+        limpar();
       })
       .finally(() => setIsLoading(false));
-  }, [sair]);
+  }, [limpar]);
 
   useEffect(() => {
-    const aoInvalidar = () => sair();
+    const aoInvalidar = () => limpar(); // sessão já inválida: não há o que avisar ao servidor
     window.addEventListener(EVENTO_SESSAO_INVALIDA, aoInvalidar);
     return () => window.removeEventListener(EVENTO_SESSAO_INVALIDA, aoInvalidar);
-  }, [sair]);
+  }, [limpar]);
 
   const concluirLogin = (res: any): ResultadoAuth => {
     const u = normalizar(res.usuario);
@@ -128,10 +138,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const registrar: AuthContextType['registrar'] = async (nome, email, senha) => {
     try {
       const res = await api.auth.registrar(nome.trim(), email.trim(), senha, fusoDoNavegador());
+      if (res.token) return concluirLogin(res); // servidor sem verificação de e-mail: já entra
       return {
         ok: true,
         requerVerificacao: true,
         email: res.email,
+        emailEnviado: res.emailEnviado,
         mensagem: res.mensagem,
         codigoDesenvolvimento: res.codigoDesenvolvimento,
       };

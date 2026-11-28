@@ -14,6 +14,8 @@ const rotasRegistros = require('./routes/logRoutes');
 const rotasCuidadores = require('./routes/cuidadorRoutes');
 const rotasNotificacoes = require('./routes/notificacaoRoutes');
 const rotasInternas = require('./routes/internoRoutes');
+const emailService = require('./services/emailService');
+const pushService = require('./services/pushService');
 
 function origemPermitida(origem) {
   if (!origem) return true; // app mobile, curl, health checks
@@ -51,6 +53,9 @@ function criarApp() {
       versao: '2.0.0',
       horario: new Date().toISOString(),
       banco: bancoOk ? 'conectado' : 'desconectado',
+      email: emailService.escolherProvedor(),
+      verificacaoEmail: emailService.verificacaoObrigatoria() ? 'obrigatoria' : 'dispensada',
+      push: pushService.pushHabilitado() ? 'ativo' : 'inativo',
     });
   });
 

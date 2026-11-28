@@ -36,7 +36,7 @@ export default function ResetPasswordPage({ navigate, token }: Props) {
       <form className="auth-form" onSubmit={enviar} noValidate>
         <div className="form-group">
           <label htmlFor="res-codigo">Código do e-mail</label>
-          <input id="res-codigo" value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())} maxLength={8} autoComplete="one-time-code" autoCapitalize="characters" spellCheck={false} className="input--codigo" placeholder="ABCD2345" />
+          <input id="res-codigo" type="text" value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())} maxLength={8} autoComplete="one-time-code" autoCapitalize="characters" spellCheck={false} className="input--codigo" placeholder="ABCD2345" />
         </div>
         <div className="form-group">
           <label htmlFor="res-senha">Nova senha</label>

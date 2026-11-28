@@ -14,6 +14,11 @@ export default function VerifyEmailPage({ navigate, email: emailInicial }: Props
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [espera, setEspera] = useState(60);
+  const [falhouEnvio] = useState(() => {
+    const f = sessionStorage.getItem('medsync_verif_falha') === '1';
+    sessionStorage.removeItem('medsync_verif_falha');
+    return f;
+  });
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   const codigo = digitos.join('');
 
@@ -68,6 +73,12 @@ export default function VerifyEmailPage({ navigate, email: emailInicial }: Props
   return (
     <AuthShell titulo="Confirme o seu e-mail" subtitulo={email ? `Digite o código de 6 dígitos enviado para ${email}` : 'Digite o seu e-mail e o código recebido'} voltarPara="login" navigate={navigate}>
       <form className="auth-form" onSubmit={(e) => { e.preventDefault(); void confirmar(); }}>
+        {falhouEnvio && (
+          <div className="form-warn" role="alert">
+            Não conseguimos enviar o e-mail agora. Toque em <strong>reenviar código</strong> em alguns instantes; se continuar, avise quem administra o MedSync.
+          </div>
+        )}
+
         {!emailInicial && (
           <div className="form-group">
             <label htmlFor="ver-email">E-mail</label>

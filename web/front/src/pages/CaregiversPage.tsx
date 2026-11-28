@@ -128,7 +128,7 @@ export default function CaregiversPage({ navigate }: Props) {
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="cuid-apelido">Como você a chama (opcional)</label>
-                  <input id="cuid-apelido" value={apelido} onChange={(e) => setApelido(e.target.value)} placeholder="Minha filha Ana" maxLength={60} />
+                  <input id="cuid-apelido" type="text" value={apelido} onChange={(e) => setApelido(e.target.value)} placeholder="Minha filha Ana" maxLength={60} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="cuid-perm">O que ela pode fazer</label>
