@@ -17,7 +17,7 @@ const env = {
   jwtSecret: process.env.JWT_SECRET,
   jwtExpira: process.env.JWT_EXPIRES_IN || '7d',
   bcryptRounds: inteiro('BCRYPT_ROUNDS', 12),
-  frontendUrls: (process.env.FRONTEND_URL || 'http://localhost:5173')
+  frontendUrls: (process.env.FRONTEND_URL || 'https://certo-fb4t.onrender.com')
     .split(',')
     .map((s) => s.trim().replace(/\/$/, ''))
     .filter(Boolean),
