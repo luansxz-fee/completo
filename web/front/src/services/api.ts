@@ -64,67 +64,67 @@ const COM_PACIENTE = { comPaciente: true };
 export const api = {
   auth: {
     registrar: (nome: string, email: string, senha: string, fusoHorario?: string) =>
-      requisicao<any>('POST', '/auth/registrar', { nome, email, senha, fusoHorario }, SEM_AUTH),
+      requisicao<any>('POST', 'api/auth/registrar', { nome, email, senha, fusoHorario }, SEM_AUTH),
     verificarEmail: (email: string, codigo: string) =>
-      requisicao<any>('POST', '/auth/verificar-email', { email, codigo }, SEM_AUTH),
+      requisicao<any>('POST', 'api/auth/verificar-email', { email, codigo }, SEM_AUTH),
     reenviarVerificacao: (email: string) =>
-      requisicao<any>('POST', '/auth/reenviar-verificacao', { email }, SEM_AUTH),
+      requisicao<any>('POST', 'api/auth/reenviar-verificacao', { email }, SEM_AUTH),
     login: (email: string, senha: string, fusoHorario?: string) =>
-      requisicao<any>('POST', '/auth/login', { email, senha, fusoHorario }, SEM_AUTH),
-    eu: () => requisicao<any>('GET', '/auth/eu'),
-    atualizarEu: (dados: Record<string, unknown>) => requisicao<any>('PUT', '/auth/eu', dados),
+      requisicao<any>('POST', 'api/auth/login', { email, senha, fusoHorario }, SEM_AUTH),
+    eu: () => requisicao<any>('GET', 'api/auth/eu'),
+    atualizarEu: (dados: Record<string, unknown>) => requisicao<any>('PUT', 'api/auth/eu', dados),
     alterarSenha: (senhaAtual: string, novaSenha: string) =>
-      requisicao<any>('POST', '/auth/alterar-senha', { senhaAtual, novaSenha }),
-    excluirConta: (senha: string) => requisicao<any>('DELETE', '/auth/eu', { senha }),
-    esqueciSenha: (email: string) => requisicao<any>('POST', '/auth/esqueci-senha', { email }, SEM_AUTH),
+      requisicao<any>('POST', 'api/auth/alterar-senha', { senhaAtual, novaSenha }),
+    excluirConta: (senha: string) => requisicao<any>('DELETE', 'api/auth/eu', { senha }),
+    esqueciSenha: (email: string) => requisicao<any>('POST', 'api/auth/esqueci-senha', { email }, SEM_AUTH),
     redefinirSenha: (token: string, novaSenha: string) =>
-      requisicao<any>('POST', '/auth/redefinir-senha', { token, novaSenha }, SEM_AUTH),
+      requisicao<any>('POST', 'api/auth/redefinir-senha', { token, novaSenha }, SEM_AUTH),
   },
 
   medicamentos: {
-    listar: () => requisicao<{ dados: any[] }>('GET', '/medicamentos', undefined, COM_PACIENTE),
-    criar: (dados: any) => requisicao<{ dados: any }>('POST', '/medicamentos', dados, COM_PACIENTE),
+    listar: () => requisicao<{ dados: any[] }>('GET', 'api/medicamentos', undefined, COM_PACIENTE),
+    criar: (dados: any) => requisicao<{ dados: any }>('POST', 'api/medicamentos', dados, COM_PACIENTE),
     atualizar: (id: string, dados: any) =>
-      requisicao<{ dados: any }>('PUT', `/medicamentos/${id}`, dados, COM_PACIENTE),
-    excluir: (id: string) => requisicao<any>('DELETE', `/medicamentos/${id}`, undefined, COM_PACIENTE),
-    alternar: (id: string) => requisicao<{ dados: any }>('PATCH', `/medicamentos/${id}/alternar`, undefined, COM_PACIENTE),
+      requisicao<{ dados: any }>('PUT', 'api/medicamentos/${id}', dados, COM_PACIENTE),
+    excluir: (id: string) => requisicao<any>('DELETE', 'api/medicamentos/${id}', undefined, COM_PACIENTE),
+    alternar: (id: string) => requisicao<{ dados: any }>('PATCH', 'api/medicamentos/${id}/alternar', undefined, COM_PACIENTE),
   },
 
   registros: {
     listar: (dias?: number) =>
-      requisicao<{ dados: any[] }>('GET', `/registros${dias ? `?dias=${dias}` : ''}`, undefined, COM_PACIENTE),
+      requisicao<{ dados: any[] }>('GET', `api/registros${dias ? `?dias=${dias}` : ''}`, undefined, COM_PACIENTE),
     adesao: () =>
-      requisicao<{ dados: { dias7: number | null; dias30: number | null } }>('GET', '/registros/adesao', undefined, COM_PACIENTE),
+      requisicao<{ dados: { dias7: number | null; dias30: number | null } }>('GET', 'api/registros/adesao', undefined, COM_PACIENTE),
     salvar: (medicamentoId: string, horarioAgendado: string, situacao: string, observacao?: string) =>
       requisicao<{ dados: any; medicamento: any }>(
         'POST',
-        '/registros',
+        'api/registros',
         { medicamentoId, horarioAgendado, situacao, observacao },
         COM_PACIENTE
       ),
   },
 
   cuidadores: {
-    meus: () => requisicao<{ dados: any[] }>('GET', '/cuidadores/meus'),
+    meus: () => requisicao<{ dados: any[] }>('GET', 'api/cuidadores/meus'),
     convidar: (email: string, permissao: string, apelido?: string) =>
-      requisicao<any>('POST', '/cuidadores/convidar', { email, permissao, apelido }),
+      requisicao<any>('POST', 'api/cuidadores/convidar', { email, permissao, apelido }),
     atualizar: (id: string, dados: { permissao?: string; apelido?: string }) =>
-      requisicao<any>('PATCH', `/cuidadores/${id}`, dados),
-    revogar: (id: string) => requisicao<any>('DELETE', `/cuidadores/${id}`),
-    convites: () => requisicao<{ dados: any[] }>('GET', '/cuidadores/convites'),
-    aceitar: (id: string) => requisicao<any>('POST', `/cuidadores/${id}/aceitar`),
-    recusar: (id: string) => requisicao<any>('POST', `/cuidadores/${id}/recusar`),
-    pacientes: () => requisicao<{ dados: any[] }>('GET', '/cuidadores/pacientes'),
-    resumo: (pacienteId: string) => requisicao<{ dados: any }>('GET', `/cuidadores/pacientes/${pacienteId}/resumo`),
+      requisicao<any>('PATCH', 'api/cuidadores/${id}', dados),
+    revogar: (id: string) => requisicao<any>('DELETE', 'api/cuidadores/${id}'),
+    convites: () => requisicao<{ dados: any[] }>('GET', 'api/cuidadores/convites'),
+    aceitar: (id: string) => requisicao<any>('POST', 'api/cuidadores/${id}/aceitar'),
+    recusar: (id: string) => requisicao<any>('POST', 'api/cuidadores/${id}/recusar'),
+    pacientes: () => requisicao<{ dados: any[] }>('GET', 'api/cuidadores/pacientes'),
+    resumo: (pacienteId: string) => requisicao<{ dados: any }>('GET', 'api/cuidadores/pacientes/${pacienteId}/resumo'),
   },
 
   notificacoes: {
     chavePublica: () =>
-      requisicao<{ habilitado: boolean; chave: string | null }>('GET', '/notificacoes/chave-publica', undefined, SEM_AUTH),
-    status: () => requisicao<any>('GET', '/notificacoes/status'),
+      requisicao<{ habilitado: boolean; chave: string | null }>('GET', 'api/notificacoes/chave-publica', undefined, SEM_AUTH),
+    status: () => requisicao<any>('GET', 'api/notificacoes/status'),
     inscrever: (subscription: unknown, dispositivo?: string) =>
-      requisicao<any>('POST', '/notificacoes/inscrever', { subscription, dispositivo }),
-    cancelar: (endpoint: string) => requisicao<any>('POST', '/notificacoes/cancelar', { endpoint }),
-    teste: (incluirEmail = false) => requisicao<any>('POST', '/notificacoes/teste', { incluirEmail }),
+      requisicao<any>('POST', 'api/notificacoes/inscrever', { subscription, dispositivo }),
+    cancelar: (endpoint: string) => requisicao<any>('POST', 'api/notificacoes/cancelar', { endpoint }),
+    teste: (incluirEmail = false) => requisicao<any>('POST', 'api/notificacoes/teste', { incluirEmail }),
   },
 };
